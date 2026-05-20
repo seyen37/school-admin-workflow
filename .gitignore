@@ -1,0 +1,49 @@
+# ============================================================
+# 敏感設定 — 嚴禁 commit
+# ============================================================
+
+# Apps Script 真實設定檔（請只 commit config.example.gs）
+src/config.gs
+src/Config.gs
+src/config.local.gs
+**/config.local.*
+
+# 含真實 ID 的測試檔
+*.local.json
+*.local.gs
+*.secrets
+
+# ============================================================
+# 一般忽略
+# ============================================================
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 編輯器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 暫存
+*.log
+*.tmp
+*.bak
+.cache/
+
+# Node / 工具產物
+node_modules/
+dist/
+build/
+
+# PHP（如果你用本機跑 generate-installer.php）
+*.pid
+*.sock
+
+# 文件編譯產物（HTML 由 Markdown 自動生成則排除）
+lessons/**/*.html
+!lessons/**/published/*.html
