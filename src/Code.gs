@@ -9,19 +9,20 @@
  *
  * 還包含兩個健康檢查函式：
  *   testDriveFolder()           — 驗證 Drive 連線
- *   testSendMail()              — 驗證 Gmail 寄信權限
+ *   testSendMail()              — 驗證寄信權限（MailApp）
  *
  * 致謝：本程式 fork 自 mihozip/google-workspace-admin-project-workflow（MIT）
  */
 
-const VERSION = '1.0.0-fork';
+const VERSION = '1.0.0-rc.1';
 
 // ====================================================================
 // CONFIG — 請參考 config.example.gs
 // ====================================================================
 //
 // 第一次使用：把 config.example.gs 的 CONFIG 物件複製到這裡，並改 4 行設定。
-// 為避免敏感 ID 洩漏，建議把 CONFIG 放在獨立的 config.gs（.gitignore 已排除）。
+// 也可以另建一個 config 檔只放 CONFIG（本機 clone 時 config.gs 已被 .gitignore 排除），
+// 但 CONFIG 只能宣告一次，不要兩處都貼。
 //
 // const CONFIG = { ... };
 //
@@ -169,13 +170,16 @@ function setupTriggers(starterResponseSheetId, milestoneResponseSheetId) {
 
 function onFormSubmit(e) {
   let data = null;
+  let projectCode = null;     // 取得編號後才有值
+  let rowCompleted = false;   // 總控表佔位列是否已回填完成
   try {
     data = parseFormResponse(e);
     validateRequiredFields(data, [
       '專案名稱', '專案年度', '承辦處室', '承辦人', '承辦人Email'
     ]);
 
-    // 用 lock 確保 dedupe + 流水號生成不會撞號
+    // 鎖內完成：去重 → 產生編號 → 寫入「建立中」佔位列。
+    // 佔位列必須在鎖內寫入，下一個送出才看得到，否則連按兩次會建出兩個同編號專案。
     const result = withLock(function () {
       // dedupe 檢查
       const existing = findExistingProjectByDedupeKey(
@@ -186,9 +190,9 @@ function onFormSubmit(e) {
         return { type: 'duplicate', existing: existing };
       }
 
-      // 生成 ProjectCode
-      const projectCode = generateProjectCode(data['專案年度'], data['承辦處室']);
-      return { type: 'new', projectCode: projectCode };
+      const code = generateProjectCode(data['專案年度'], data['承辦處室']);
+      appendControlPlaceholder(code, data);
+      return { type: 'new', projectCode: code };
     });
 
     if (result.type === 'duplicate') {
@@ -196,7 +200,7 @@ function onFormSubmit(e) {
       return;
     }
 
-    const projectCode = result.projectCode;
+    projectCode = result.projectCode;
 
     // 建立完整專案結構（資料夾 + Doc + 待辦表 + 檢核表 + Calendar + 通知）
     const fs = createProjectFolderStructure(
@@ -216,16 +220,15 @@ function onFormSubmit(e) {
       logError('Calendar 事件建立失敗（不阻斷整體流程）', calErr);
     }
 
-    // 寫入總控表
-    appendToControlSheet({
+    // 回填總控表佔位列（建立中 → 籌備中）
+    completeControlRow({
       projectCode: projectCode,
-      data: data,
       projectFolder: projectFolder,
       projectDoc: projectDoc,
       taskSheet: taskSheet,
-      checklistSheet: checklistSheet,
-      eventIds: eventIds
+      checklistSheet: checklistSheet
     });
+    rowCompleted = true;
 
     // 通知承辦人
     sendInternalNotification({
@@ -241,6 +244,10 @@ function onFormSubmit(e) {
 
   } catch (error) {
     logError('onFormSubmit 失敗', error);
+    // 專案沒建完就把佔位列標為「錯誤」；通知信失敗不算（專案本身已完整建立）
+    if (projectCode && !rowCompleted) {
+      markControlRowError(projectCode, error.message);
+    }
     notifyAdminError(error, 'onFormSubmit' + (data && data['專案名稱'] ? '/' + data['專案名稱'] : ''));
   }
 }
@@ -419,7 +426,7 @@ function testSendMail() {
   if (!CONFIG.ADMIN_EMAIL) {
     throw new Error('CONFIG.ADMIN_EMAIL 未設定。');
   }
-  GmailApp.sendEmail(
+  MailApp.sendEmail(
     CONFIG.ADMIN_EMAIL,
     '【行政專案系統】測試信',
     '若您收到此信，表示 Apps Script 的 Gmail 寄信權限已正確授權。\n\n版本：' + VERSION + '\n時間：' + nowStamp()

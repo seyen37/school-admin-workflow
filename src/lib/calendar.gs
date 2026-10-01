@@ -160,7 +160,38 @@ function createMilestoneEvent(project, data, milestoneDate) {
 }
 
 /**
- * 建立 all-day 事件並依 reminderDays 加上 popup（與 email）reminder
+ * 事件時段：活動當天 08:00–08:30（定時事件，不用全天事件）
+ *
+ * 為什麼不用全天事件：全天事件的提醒從當天 00:00 往前算，「前 N 天」會在半夜跳；
+ * 而 Calendar 規定提醒至少提前 5 分鐘，「當天」（0 分）會被拒絕。
+ * 改成定時事件後，提醒以 08:00 起算：
+ *   前 N 天 → N 天前的 08:00
+ *   當天    → 當天 07:55（官方下限 5 分鐘）
+ */
+const EVENT_START_HOUR = 8;
+const EVENT_DURATION_MINUTES = 30;
+const MIN_REMINDER_MINUTES = 5;      // Calendar 官方下限
+const MAX_REMINDER_MINUTES = 40320;  // Calendar 官方上限（4 週）
+
+/**
+ * 把提醒天數換成「事件開始前幾分鐘」；超出官方範圍回傳 null
+ */
+function reminderDaysToMinutes(days) {
+  const minutes = Math.max(days * 24 * 60, MIN_REMINDER_MINUTES);
+  return minutes > MAX_REMINDER_MINUTES ? null : minutes;
+}
+
+/**
+ * 依 CONFIG.TIMEZONE 取出日期的年月日，組成當天 EVENT_START_HOUR 點的時間
+ * （避免 ISO 字串以 UTC 解析造成日期偏移）
+ */
+function buildEventStart(date) {
+  const ymd = Utilities.formatDate(date, CONFIG.TIMEZONE, 'yyyy-MM-dd').split('-');
+  return new Date(Number(ymd[0]), Number(ymd[1]) - 1, Number(ymd[2]), EVENT_START_HOUR, 0, 0);
+}
+
+/**
+ * 建立定時事件並依 reminderDays 加上 popup reminder
  * 回傳事件 ID；失敗回傳 null（不拋例外，避免單一事件失敗導致整單失敗）
  */
 function createEventWithReminders(calendar, title, dateValue, description, reminderDays) {
@@ -171,25 +202,23 @@ function createEventWithReminders(calendar, title, dateValue, description, remin
   }
 
   try {
-    const event = calendar.createAllDayEvent(title, date, { description: description });
+    const start = buildEventStart(date);
+    const end = new Date(start.getTime() + EVENT_DURATION_MINUTES * 60 * 1000);
+    const event = calendar.createEvent(title, start, end, { description: description });
 
-    // 預設清除全天事件的預設提醒，再依 reminderDays 加上 popup
-    try { event.removeAllReminders(); } catch (e) { /* 部分版本 GAS 沒有 removeAllReminders */ }
-
-    // GAS addPopupReminder 上限為 40320 分鐘（4 週）
-    const MAX_REMINDER_MINUTES = 40320;
+    // 清掉日曆預設提醒，只留本系統設定的
+    try { event.removeAllReminders(); } catch (e) { /* noop */ }
 
     (reminderDays || []).forEach(function (days) {
-      const minutes = days * 24 * 60;
-      if (minutes > MAX_REMINDER_MINUTES) {
-        log('addPopupReminder 略過：days=' + days + ' (' + minutes + ' 分) 超過 GAS 上限 ' + MAX_REMINDER_MINUTES);
+      const minutes = reminderDaysToMinutes(days);
+      if (minutes === null) {
+        log('addPopupReminder 略過：days=' + days + ' 超過官方上限 ' + MAX_REMINDER_MINUTES + ' 分');
         return;
       }
       try {
-        // all-day 事件的 0 分對應當天 09:00 提醒（GAS 行為）
         event.addPopupReminder(minutes);
       } catch (err) {
-        log('addPopupReminder 失敗（days=' + days + '）：' + err.message);
+        log('addPopupReminder 失敗（days=' + days + '，' + minutes + ' 分）：' + err.message);
       }
     });
 

@@ -8,7 +8,7 @@
 > 對應 commits：
 > - `b968afe` init: fork & rewrite from mihozip/google-workspace-admin-project-workflow
 > - `29b7006` docs: add 30-minute install acceptance checklist
-> - `<待推>` docs: add session-close retrospective + update WORK_LOG with P4/P5/收工
+> - `13dd238` docs: session-close retrospective + 6 共通性原則 + WORK_LOG 補完
 
 ---
 

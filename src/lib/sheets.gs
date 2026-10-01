@@ -98,35 +98,105 @@ function initializeMilestoneRecordSheet(spreadsheet) {
 // 寫入總控表
 // ====================================================================
 
-function appendToControlSheet(payload) {
+/**
+ * 總控表「專案狀態」欄的系統保留值
+ *   建立中 — onFormSubmit 已取得編號、正在建立資料夾與文件
+ *   錯誤   — 建立過程失敗；去重檢查會略過這種列，承辦人可以重新送出
+ */
+const CONTROL_STATUS_CREATING = '建立中';
+const CONTROL_STATUS_ERROR = '錯誤';
+const CONTROL_STATUS_READY = '籌備中';
+
+/**
+ * 在總控表寫入「建立中」佔位列。
+ *
+ * ⚠️ 必須在 withLock 內呼叫：佔位列讓下一個等鎖的送出能在去重檢查時看到這筆，
+ *    並讓 generateProjectCode 不會發出相同編號。
+ *    結尾的 SpreadsheetApp.flush() 確保釋放鎖之前寫入已生效。
+ */
+function appendControlPlaceholder(projectCode, data) {
   const ss = SpreadsheetApp.openById(getControlSheetIdSafely());
-  const sheet = initializeControlSheet(ss);
+  // 鎖內只取工作表，不做 initializeControlSheet 的格式化（autoResize 很慢，會拉長持鎖時間）
+  const sheet = ss.getSheetByName('行政專案總控表') || initializeControlSheet(ss);
   const headers = getHeaderRow(sheet);
 
-  const rowData = {
-    '專案編號': payload.projectCode,
-    '專案名稱': payload.data['專案名稱'] || '',
-    '年度': payload.data['專案年度'] || '',
-    '承辦處室': payload.data['承辦處室'] || '',
-    '承辦人': payload.data['承辦人'] || '',
-    '承辦人Email': payload.data['承辦人Email'] || '',
+  appendObjectRow(sheet, headers, {
+    '專案編號': projectCode,
+    '專案名稱': data['專案名稱'] || '',
+    '年度': data['專案年度'] || '',
+    '承辦處室': data['承辦處室'] || '',
+    '承辦人': data['承辦人'] || '',
+    '承辦人Email': data['承辦人Email'] || '',
+    'NotebookLM筆記本連結': '',
+    '專案狀態': CONTROL_STATUS_CREATING,
+    '備註': data['備註'] || '',
+    '來文單位': data['來文單位'] || '',
+    '公文文號': data['公文文號'] || '',
+    // 寫 Date 物件而非字串：存的是絕對時間，isAbandonedControlRow 判斷「建立中多久」
+    // 才不會受試算表時區與 CONFIG.TIMEZONE 不同影響
+    '建立日期': new Date(),
+    '活動日期': data['活動日期'] || '',
+    '成果期限': data['成果繳交期限'] || '',
+    '經費期限': data['經費核銷期限'] || '',
+    '是否有經費': data['是否有經費'] || ''
+  });
+  SpreadsheetApp.flush();
+}
+
+/**
+ * 依專案編號更新總控表該列的指定欄位。
+ * 用編號而非列號定位：建立期間若有人排序或刪列，列號會位移，編號不會。
+ * 回傳是否找到並更新。
+ */
+function updateControlRowByCode(projectCode, fields) {
+  const ss = SpreadsheetApp.openById(getControlSheetIdSafely());
+  const sheet = ss.getSheetByName('行政專案總控表');
+  if (!sheet || sheet.getLastRow() < 2) return false;
+
+  const values = sheet.getDataRange().getValues();
+  const map = buildHeaderMap(values[0]);
+  const target = safeString(projectCode).trim();
+
+  for (let i = 1; i < values.length; i++) {
+    if (safeString(getValueByHeader(values[i], map, '專案編號')).trim() !== target) continue;
+    Object.keys(fields).forEach(function (key) {
+      if (map[key] === undefined) return;
+      sheet.getRange(i + 1, map[key] + 1).setValue(fields[key]);
+    });
+    return true;
+  }
+  return false;
+}
+
+/**
+ * 專案建立完成：回填連結並把狀態改為「籌備中」
+ */
+function completeControlRow(payload) {
+  const found = updateControlRowByCode(payload.projectCode, {
     'Drive資料夾連結': payload.projectFolder.getUrl(),
     '專案紀錄Docs連結': payload.projectDoc.getUrl(),
     '待辦追蹤表連結': payload.taskSheet.getUrl(),
     '成果檢核表連結': payload.checklistSheet.getUrl(),
-    'NotebookLM筆記本連結': '',
-    '專案狀態': '籌備中',
-    '備註': payload.data['備註'] || '',
-    '來文單位': payload.data['來文單位'] || '',
-    '公文文號': payload.data['公文文號'] || '',
-    '建立日期': nowStamp(),
-    '活動日期': payload.data['活動日期'] || '',
-    '成果期限': payload.data['成果繳交期限'] || '',
-    '經費期限': payload.data['經費核銷期限'] || '',
-    '是否有經費': payload.data['是否有經費'] || ''
-  };
+    '專案狀態': CONTROL_STATUS_READY
+  });
+  if (!found) {
+    throw new Error('總控表找不到佔位列：' + payload.projectCode + '（是否被手動刪除？）');
+  }
+}
 
-  appendObjectRow(sheet, headers, rowData);
+/**
+ * 專案建立失敗：把佔位列標為「錯誤」並在備註寫入原因。
+ * 本身失敗只記 log，不再拋出，避免蓋掉原始錯誤。
+ */
+function markControlRowError(projectCode, message) {
+  try {
+    updateControlRowByCode(projectCode, {
+      '專案狀態': CONTROL_STATUS_ERROR,
+      '備註': '建立失敗：' + safeString(message) + '（修正後可直接重新送出表單）'
+    });
+  } catch (err) {
+    logError('markControlRowError 失敗', err);
+  }
 }
 
 // ====================================================================

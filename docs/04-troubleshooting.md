@@ -21,6 +21,30 @@ Exception: Unexpected error while getting the method or property getFolderById o
 
 ---
 
+### 「xxx is not defined」
+
+**錯誤訊息範例：**
+```
+ReferenceError: ensureRootLevelFolders is not defined
+ReferenceError: CONFIG is not defined
+```
+
+**原因與解法：**
+
+1. **少貼了 lib 檔**：`src/lib/` 的 6 個 `.gs` 都要各自建成一個檔案貼進去，對照 [00-quickstart.md 第 5 步](./00-quickstart.md#5-貼上程式碼共-8-個檔案)的表格逐一確認
+2. **`CONFIG` 沒貼**：把 `config.example.gs` 的 `const CONFIG = {...}` 貼進 `Code.gs`
+3. **`CONFIG` 貼了兩次**：出現 `Identifier 'CONFIG' has already been declared` → 只留一份
+
+---
+
+### 「沒有權限呼叫 GmailApp.sendEmail」
+
+**原因：** 你用的是 2026-10-01 以前的舊版程式。舊版用 `GmailApp` 寄信，但 `appsscript.json` 沒有要求對應權限。
+
+**解法：** 換成最新版的 `src/lib/notifications.gs`、`src/Code.gs` 與 `src/appsscript.json`，再執行一次 `setupAdminWorkflow()` 重新授權。
+
+---
+
 ### 「Apps Script 授權失敗」
 
 **症狀：** 按執行後跳出「Authorization required」但點下去沒反應。
@@ -87,13 +111,22 @@ Calendar API has not been used in project XXXX before or it is disabled.
 **症狀：** Calendar 事件建好了，但時間到沒跳通知。
 
 **檢查：**
-1. 打開該 Calendar 事件 → 看右側「通知」區
-2. 應該有「09:00 之前 — 彈出式」之類的設定
-3. 如果完全沒提醒 → 程式建立時沒呼叫 `addPopupReminder()`
+1. 打開該 Calendar 事件 → 事件應為當天 08:00–08:30（不是全天）
+2. 看「通知」區：應有「5 分鐘前」（當天）或「1 天前」「3 天前」等彈出式通知
+3. 如果事件是「全天」或完全沒提醒 → 你用的是 2026-10-01 以前的舊版 `lib/calendar.gs`，請更新
+4. 手機收不到：確認 Google 日曆 App 的通知權限已開
 
-**這條跟原作差別最大，請特別檢查 P3 版本是否正確改寫。**
+**這條跟原作差別最大，請特別檢查。** 執行作業紀錄中若出現 `addPopupReminder 失敗`，代表該提醒時間被 Calendar 拒絕，請把紀錄內容附在 issue 回報。
 
-如果你用的還是 P1 骨架版（Code.gs 尚未實作），Calendar 提醒本來就還不會有。
+---
+
+### 「總控表有一列卡在『建立中』或『錯誤』」
+
+**原因：**
+- **錯誤**：建立過程某一步失敗，原因寫在該列「備註」。修正原因後直接重新送出表單即可，系統會給新編號
+- **建立中** 超過 10 分鐘：執行被中斷（例如超過 Apps Script 6 分鐘上限）。系統會把這種列視為失效，直接重新送出表單即可
+
+**解法：** 重新送出表單；完成後可把舊的那列「專案狀態」改成「錯誤」作為紀錄。`03_專案資料夾` 裡若有建一半的資料夾，可以移到垃圾桶。
 
 ---
 
@@ -101,7 +134,7 @@ Calendar API has not been used in project XXXX before or it is disabled.
 
 **錯誤訊息範例：**
 ```
-Service invoked too many times for one day: gmail
+Service invoked too many times for one day: email
 ```
 
 **解法：**

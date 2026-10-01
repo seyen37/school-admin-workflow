@@ -7,8 +7,8 @@
  *   3. 修改下面 4 個必填欄位
  *   4. 切勿把含真實 ID 的設定 commit 到公開 GitHub
  *
- * 進階：你可以把 CONFIG 放到獨立的 config.gs 檔案，
- * .gitignore 已排除 config.gs，避免敏感資訊外洩。
+ * 進階：你可以把 CONFIG 放到獨立的 config 檔案（本機 clone 時 config.gs 已被 .gitignore 排除），
+ * 但 CONFIG 只能宣告一次，不要同時貼在 Code.gs。
  */
 
 const CONFIG = {

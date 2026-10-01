@@ -6,7 +6,7 @@
 > 終點：使用者 sign-off「O2 + 推薦的 repo 名 + 分四階段」，P1 開始執行。
 >
 > 對應 commits：
-> - `<未推>` init: fork & rewrite from mihozip/google-workspace-admin-project-workflow
+> - `b968afe` init: fork & rewrite from mihozip/google-workspace-admin-project-workflow
 
 ---
 

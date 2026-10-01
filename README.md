@@ -4,7 +4,11 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Google Apps Script](https://img.shields.io/badge/Google%20Apps%20Script-V8-yellow.svg)](https://developers.google.com/apps-script)
-[![Status](https://img.shields.io/badge/status-beta-orange.svg)](#)
+[![Status](https://img.shields.io/badge/status-v1.0%20%E9%A9%97%E6%94%B6%E4%B8%AD-orange.svg)](#路線圖)
+
+> **目前狀態：v1.0.0-rc.1，實機驗收中。**
+> 程式與文件已完成，2026-10-01 修正了寄信權限、安裝步驟與重複送出三個問題，正在真實 Google Workspace 上跑 [30 分鐘驗收清單](./docs/checklists/install-test-30min.md)。驗收通過後會發布 v1.0.0 並移除這段說明。
+> 如果你現在就想試裝，歡迎；遇到問題請開 [issue](https://github.com/seyen37/school-admin-workflow/issues/new/choose)。
 
 ---
 
@@ -51,8 +55,8 @@
 詳細步驟請看 **[docs/00-quickstart.md](./docs/00-quickstart.md)**，這裡先給你一張地圖：
 
 1. 在 Google Drive 建一個總資料夾
-2. 開啟 Google Apps Script，貼上 `src/Code.gs`
-3. 修改檔案最上面的 4 行設定（Drive ID、Calendar ID、Admin Email、時區）
+2. 開啟 Google Apps Script，貼上 `src/` 底下的 **8 個檔案**（`Code.gs`、`appsscript.json`、`lib/` 的 6 個 `.gs`）
+3. 把 `config.example.gs` 貼進 `Code.gs`，修改 4 行設定（Drive ID、Calendar ID、Admin Email、時區）
 4. 執行 `setupAdminWorkflow()`，完成授權
 5. 從 Logger 取得兩張表單網址，分享給承辦人
 
@@ -174,7 +178,11 @@ MIT — 詳見 [LICENSE](./LICENSE)。
 ## 路線圖
 
 - [x] P1：repo 骨架、README、致謝、LICENSE
-- [ ] P2：完整 docs/ 八份文件
-- [ ] P3：Apps Script 重構（dedupe、彈跳提醒、多日曆、人類友善流水號…）
-- [ ] P4：教材重新編排、去識別化範例、貢獻規範
-- [ ] P5：最終驗證、可 push 上 GitHub
+- [x] P2：完整 docs/ 八份文件
+- [x] P3：Apps Script 重構（dedupe、彈跳提醒、多日曆、人類友善流水號…）
+- [x] P4：教材重新編排、去識別化範例、貢獻規範
+- [x] P5：靜態驗證、雙推 GitHub
+- [x] v1.0.0-rc.1：修正寄信權限、安裝文件、重複送出（2026-10-01）
+- [ ] 實機驗收：[30 分鐘驗收清單](./docs/checklists/install-test-30min.md)全綠
+- [ ] v1.0.0：打 tag、補真實截圖
+- [ ] 之後（未排期）：單檔安裝包、校內試辦

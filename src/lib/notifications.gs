@@ -50,7 +50,7 @@ function sendInternalNotification(payload) {
     '— 學校行政專案工作流（v' + VERSION + '）'
   ].join('\n');
 
-  GmailApp.sendEmail(email, subject, body);
+  MailApp.sendEmail(email, subject, body);
 }
 
 /**
@@ -82,7 +82,7 @@ function sendMilestoneNotification(project, data, eventIds) {
     '— 學校行政專案工作流'
   ].join('\n');
 
-  GmailApp.sendEmail(email, subject, body);
+  MailApp.sendEmail(email, subject, body);
 }
 
 /**
@@ -113,7 +113,7 @@ function sendDuplicateProjectNotification(existing, data) {
     '— 學校行政專案工作流'
   ].join('\n');
 
-  GmailApp.sendEmail(email, subject, body);
+  MailApp.sendEmail(email, subject, body);
 }
 
 /**
@@ -149,7 +149,7 @@ function sendMilestoneErrorNotification(data, errorMessage) {
     '— 學校行政專案工作流'
   ].join('\n');
 
-  GmailApp.sendEmail(to, subject, body);
+  MailApp.sendEmail(to, subject, body);
 }
 
 // ====================================================================
@@ -197,7 +197,7 @@ function notifyAdminError(error, contextLabel) {
   ].join('\n');
 
   try {
-    GmailApp.sendEmail(adminEmail, subject, body);
+    MailApp.sendEmail(adminEmail, subject, body);
   } catch (sendErr) {
     log('notifyAdminError 寄信失敗：' + sendErr.message);
   }

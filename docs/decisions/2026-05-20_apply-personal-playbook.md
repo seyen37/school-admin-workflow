@@ -6,7 +6,7 @@
 > 終點：套用 O2「核心套用（不含個人慣例）」，補齊治理缺口後再進 P4。
 >
 > 對應 commits：
-> - `<未推>` docs: apply personal-playbook governance (decisions/_TEMPLATE, init log, work log, LICENSE identity)
+> - `b968afe`（併入 init commit，未單獨提交）docs: apply personal-playbook governance (decisions/_TEMPLATE, init log, work log, LICENSE identity)
 
 ---
 

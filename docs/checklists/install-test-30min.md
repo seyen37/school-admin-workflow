@@ -55,7 +55,7 @@
 
 ### 2.3 加入 CONFIG 設定
 
-回到 `Code.gs`，在 `const VERSION = '1.0.0-fork';` 那行**下方**貼上設定（從 `src/config.example.gs` 複製）：
+回到 `Code.gs`，在 `const VERSION = '1.0.0-rc.1';` 那行**下方**貼上設定（從 `src/config.example.gs` 複製）：
 
 ```javascript
 const CONFIG = {
@@ -144,9 +144,10 @@ const CONFIG = {
 點開任一事件 → 看右側「通知」區。
 
 - ✅ **通過**（這是本 fork 對原作的關鍵改進，必須驗證）：
-  - [ ] 活動日事件有 **2 個 popup reminder**（當天 + 前 1 天）
-  - [ ] 成果期限事件有 **3 個 popup reminder**（前 7 / 前 3 / 當天）
-  - [ ] 經費核銷期限事件有 **2 個 popup reminder**（前 7 / 當天）
+  - [ ] 三個事件都是**當天 08:00–08:30**（不是全天事件）
+  - [ ] 活動日事件有 **2 個通知**：5 分鐘前、1 天前
+  - [ ] 成果期限事件有 **3 個通知**：5 分鐘前、3 天前、1 週前
+  - [ ] 經費核銷期限事件有 **2 個通知**：5 分鐘前、1 週前
 - ❌ **失敗**：事件存在但沒任何通知 → `lib/calendar.gs` 的 `addPopupReminder` 沒被呼叫到，去 Executions 看 createInitialProjectEvents log
 
 ---
@@ -232,11 +233,11 @@ function runDryRunReset() {
 
 驗證通過後建議做的 3 件事：
 
-1. **Tag release v1.0.0-fork**：
+1. **Tag release v1.0.0**（先把 `src/Code.gs` 的 `VERSION` 改成 `1.0.0`）：
    ```powershell
-   git tag v1.0.0-fork
-   git push origin v1.0.0-fork
-   git push backup v1.0.0-fork
+   git tag v1.0.0
+   git push origin v1.0.0
+   git push backup v1.0.0
    ```
 2. **截 3 張圖補進 `docs/images/`**：公文表單 / Drive 自動建好的資料夾 / 總控表畫面 → 重新 commit 推上去 → README 的「看一眼成果」段就能展示真實畫面
 3. **寫一條短訊發布**：FB / Line / Slack「我把學校行政流程自動化做成開源工具了，分享給有興趣的學校」

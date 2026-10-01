@@ -67,12 +67,28 @@ ID 就是字串 `primary`，直接使用，跳過下面步驟。
 
 ---
 
-## 5. 貼上程式碼
+## 5. 貼上程式碼（共 8 個檔案）
 
-1. 開啟本 repo 的 [src/Code.gs](../src/Code.gs)
-2. 全選 → 複製
-3. 回到 Apps Script，貼到 `Code.gs`（覆蓋原本的 `function myFunction()`）
-4. 同樣方式把 [src/config.example.gs](../src/config.example.gs) 的內容貼到 Code.gs 最上方（在 `const VERSION = ...` 之後）
+> ⚠️ **只貼 `Code.gs` 會失敗**：`Code.gs` 會呼叫 `src/lib/` 裡的函式，少貼任何一個都會出現「`xxx is not defined`」。
+
+1. 左側「專案設定」（齒輪）→ 勾選「**在編輯器中顯示「appsscript.json」資訊清單檔案**」
+2. 回到「編輯器」，依下表逐一建立檔案並貼上內容。新增檔案：左側「檔案」旁的 **＋** → 「指令碼」，輸入檔名（編輯器會自動補 `.gs`）
+
+| 編輯器內檔名 | 貼上本 repo 的這個檔案 |
+|---|---|
+| `Code.gs`（已存在，覆蓋原本的 `function myFunction()`） | [src/Code.gs](../src/Code.gs) |
+| `appsscript.json`（已存在，整份覆蓋） | [src/appsscript.json](../src/appsscript.json) |
+| `lib_utils` | [src/lib/utils.gs](../src/lib/utils.gs) |
+| `lib_folders` | [src/lib/folders.gs](../src/lib/folders.gs) |
+| `lib_forms` | [src/lib/forms.gs](../src/lib/forms.gs) |
+| `lib_sheets` | [src/lib/sheets.gs](../src/lib/sheets.gs) |
+| `lib_calendar` | [src/lib/calendar.gs](../src/lib/calendar.gs) |
+| `lib_notifications` | [src/lib/notifications.gs](../src/lib/notifications.gs) |
+
+3. 把 [src/config.example.gs](../src/config.example.gs) 的內容貼到 `Code.gs` 裡 `const VERSION = ...` 那行**下方**（也可以另建一個檔案只放 `CONFIG`，但只能放一份，兩處都貼會出現「已宣告」錯誤）
+4. 按 **Ctrl + S** 儲存
+
+> 檔名不影響執行（Apps Script 所有檔案共用同一個全域範圍），上表只是方便你對照。
 
 ---
 
@@ -103,7 +119,8 @@ const CONFIG = {
    - 點「審查權限」
    - 選你的 Google 帳號
    - 出現「Google 尚未驗證這個應用程式」→ 點左下「進階」→ 「前往（不安全）」
-   - 同意一系列權限（Drive、Forms、Sheets、Docs、Calendar、Gmail）
+   - 同意一系列權限（Drive、Forms、Sheets、Docs、Calendar、以你的名義寄信）
+   - 寄信權限只能「代你寄出通知信」，**不能讀取你的信箱**
 
 > **「不安全」是嚇人但正常的訊息**：因為這支腳本是你自己寫的（不是 Google 上架審查過的應用），所以會顯示這段警告。實際上權限只在你自己的 Google 帳號內運作。
 

@@ -15,6 +15,7 @@
 **如果追問：**
 - 程式碼開源、可審查（GitHub MIT License）
 - 系統使用的所有資源（Drive、Calendar、Gmail）都已經是 Google Workspace 既有服務，**沒有引入新的廠商**
+- 權限只要求必要的 7 項。寄信只能「代承辦人寄出通知」，不能讀取信箱；Drive 需要完整權限，是因為系統要在你**既有的**總資料夾裡建立子資料夾，較窄的權限只能存取系統自己建立的檔案
 - 詳細處理範圍見 [docs/06-privacy-template.md](./06-privacy-template.md)
 
 **誠實的限制：**

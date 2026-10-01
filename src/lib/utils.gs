@@ -252,6 +252,8 @@ function findExistingProjectByDedupeKey(year, office, projectName) {
   const targetKey = buildDedupeKey(year, office, projectName);
   for (let i = 1; i < values.length; i++) {
     const row = values[i];
+    // 建立失敗、或「建立中」卡太久（執行被中斷）的列不算重複，讓承辦人可以重新送出
+    if (isAbandonedControlRow(row, map)) continue;
     const k = buildDedupeKey(
       getValueByHeader(row, map, '年度'),
       getValueByHeader(row, map, '承辦處室'),
@@ -264,11 +266,27 @@ function findExistingProjectByDedupeKey(year, office, projectName) {
         projectName: getValueByHeader(row, map, '專案名稱'),
         folderUrl: getValueByHeader(row, map, 'Drive資料夾連結'),
         owner: getValueByHeader(row, map, '承辦人'),
-        ownerEmail: getValueByHeader(row, map, '承辦人Email')
+        ownerEmail: getValueByHeader(row, map, '承辦人Email'),
+        status: getValueByHeader(row, map, '專案狀態')
       };
     }
   }
   return null;
+}
+
+/**
+ * 總控表某列是否為「已放棄」：狀態「錯誤」，或「建立中」超過 STALE_CREATING_MINUTES 分鐘
+ * （Apps Script 單次執行上限 6 分鐘，超過 10 分鐘仍在建立中，代表該次執行已被中斷）
+ */
+const STALE_CREATING_MINUTES = 10;
+
+function isAbandonedControlRow(row, map) {
+  const status = safeString(getValueByHeader(row, map, '專案狀態')).trim();
+  if (status === CONTROL_STATUS_ERROR) return true;
+  if (status !== CONTROL_STATUS_CREATING) return false;
+  const created = parseDate(getValueByHeader(row, map, '建立日期'));
+  if (!created) return false;
+  return (Date.now() - created.getTime()) > STALE_CREATING_MINUTES * 60 * 1000;
 }
 
 /**
